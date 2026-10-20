@@ -897,7 +897,7 @@ if(G.over)return;
 p.dz.splice(j,1);t.it='sabre';t.hp+=T.sabre.h||0;t.atk+=T.sabre.a||0;
 L(nm(p)+' นำ ดาบปลอกดำ จากดรอปโซนไปสวมให้ '+T[t.k].n+' (ATK+'+T.sabre.a+')');sw()}
 /* ---------- Hikari / MACHINE : ARM & ARMORY (Starter Deck 03) ---------- */
-const EA1=()=>G&&G.field&&G.field.k=='earth'?1:0,okA=async(k,m,c)=>{if(!PVP)return await ask0(k,m,c);PQ=CURA;if(CURA==ME&&!ISPEC){const r=await ask0(k,m,c);net({t:'ans',v:r});return r}return waitAns()},MCH=k=>tb(k)=='MACHINE',aA=u=>(u.arm?u.arm.filter(x=>x=='theta').length:0)+(u.ld&&G&&G.field&&G.field.k=='earth'?1:0),LA=(p,b=1)=>p.ld?ea(p.ld):Math.max(0,p.atk+(b?p.bonus:0)+EA1()-snL(p)+(p.lant&&p.soul>=30?2:0)+nkLA(p));
+const EA1=()=>G&&G.field&&G.field.k=='earth'?1:0,okA=async(k,m,c)=>{if(!PVP)return await ask0(k,m,c);PQ=CURA;if(CURA==ME&&!ISPEC){const r=await ask0(k,m,c);net({t:'ans',v:r});return r}return waitAns()},MCH=k=>tb(k)=='MACHINE',aA=u=>(u.arm?u.arm.filter(x=>x=='theta').length:0)+(u.ld&&G&&G.field&&G.field.k=='earth'?1:0),LA=(p,b=1)=>p.ld?ea(p.ld):Math.max(0,p.atk+(b?p.bonus:0)+EA1()-snL(p)+(lanT(p)?2:0)+nkLA(p));
 const canFuse=p=>p.L=='hikari'&&!p.tl&&p.buddy=='fusion'&&['beta','gamma'].every(k=>all(p).some(u=>u.k==k&&u.hp>0))&&(p.f.includes(null)||p.f.some(u=>u&&(u.k=='beta'||u.k=='gamma')));
 const armSl=(p,ex)=>[...(p.ld&&p.ld.arm.length<5?[p.ld]:[]),...all(p).filter(u=>u!==ex&&!u.ld&&u.hp>0&&T[u.k].proto&&u.arm&&u.arm.length<1)],canArm=p=>[...p.f,...p.m].some(x=>x&&!x.ld&&T[x.k].arm&&armSl(p,x).length>0);
 async function armTgt(p,c){const sl=armSl(p,c);if(!sl.length)return null;if(sl.length==1||!isH(p))return sl[0];const t=await target('ARM: เลือกยูนิทที่จะสวม '+T[c.k].n+' ให้ (ลีดเดอร์ ARMORY หรือยูนิท PROTOTYPE)',sl);return sl.includes(t)?t:sl[0]}
@@ -933,7 +933,9 @@ function dzW(p,a){if(a.__w)return a;Object.defineProperty(a,'__w',{value:1});con
 function yamiInit(p){p.lant=true;p.soul=4;p.nf=p.deck.includes('fhead');let _d=dzW(p,p.dz);Object.defineProperty(p,'dz',{get:()=>{DZO=null;return _d},set:v=>{_d=dzW(p,v)},enumerable:true,configurable:true})}
 function fhPlace(q){if(!q.lant)return;q.nf=false;const a=q.deck.indexOf('fhead');if(a<0)return;q.deck.splice(a,1);q.deck.splice(Math.max(0,q.deck.length-8),0,'fhead')}
 function scyA(u){if(!G||!G.p||u.it!=='scy')return 0;for(const p of G.p){if(p.f.includes(u))return p.lant&&p.soul>=15&&G.turn==p.id?1:0}return 0}
-function lanA(u){if(!G||!G.p)return 0;for(const p of G.p){if(all(p).includes(u))return p.lant&&p.soul>=30?2:0}return 0}
+/* ตะเกียงวิญญาณ 30 โซล: บัพ ATK +2 ให้ทั้งทีม (โหมดทีม/บอส: ลีดเดอร์และยูนิทของเพื่อนร่วมทีมก็ได้รับ) */
+function lanT(p){if(!G||!G.p||!p)return false;const t=TMF(p.id);return G.p.some(q=>q&&q.lant&&q.soul>=30&&TMF(q.id)==t&&(q===p||!q.out))}
+function lanA(u){if(!G||!G.p)return 0;for(const p of G.p){if(all(p).includes(u))return lanT(p)?2:0}return 0}
 function soulAdd(p,n,q){const b=p.soul;p.soul+=n;if(!q)L(nm(p)+': ตะเกียงวิญญาณ +'+n+' โซล (รวม '+p.soul+')');[10,20,30].forEach(x=>{if(b<x&&p.soul>=x)L('ตะเกียงวิญญาณถึง '+x+' โซล · ความสามารถทำงานแล้ว')})}
 /* ส่งการ์ดบนสุดของกองลงดรอปโซน "ทีละใบ" (โชว์ทีละใบ · รอให้สกิลที่ถูกกระตุ้น เช่น สิงร่างของเฟาสต์ ทำงานจบก่อนส่งใบถัดไป) */
 async function milSeq(p,n,rift){let m=0,R=null;const wt=ms=>new Promise(r=>setTimeout(r,ms));
@@ -1654,7 +1656,7 @@ function BSLN(x){return !!(G&&G.boss&&x&&x.id!=G.bs&&!G.p.some(q=>q.id!=G.bs&&q.
 function BSLO(){return (G.lo||G.p.filter(q=>q.id!=G.bs).map(q=>q.id)).map(i=>G.p[i])}
 function bsPos(x,m){if(!BSLN(x))return MP.L;const o=BSLO(),n=o.length,i=Math.max(0,o.findIndex(q=>q.id==m.id));return [Math.round(1000-(n*236-33)/2)+i*236,690]}
 function bsMini(m){const mi=(k,r)=>'<div class="art i-'+k+' '+eC(k)+'" data-k="'+k+'" style="position:absolute;'+r+'top:2%;width:36%;height:34%;border:max(1px,.25cqw) solid var(--ln);border-radius:.8cqw;background-size:cover;background-position:center top"></div>';return (m.buddy?mi(m.buddy,'left:2%;'):'')+(m.lant?mi('lant','right:2%;'):m.cube?mi('cube','right:2%;'):'')}
-function bsAllies(x,P){if(!BSLN(x))return '';return BSLO().filter(m=>m.id!=x.id).map(m=>{const k=LK(m);return '<div class="c f art i-'+k+' '+eC(k)+'" style="'+P(bsPos(x,m))+(m.out?';opacity:.3;filter:grayscale(1)':'')+(G.turn==m.id?';box-shadow:0 0 0 .45cqw #ffd54f':'')+'" data-k="'+k+'"><i class="bd a">'+LA(m)+'</i><i class="bd h">'+Math.max(0,m.hp)+'</i>'+bsMini(m)+'<div class=nm>'+(T4N[m.id]||'')+' · '+T[k].n+'</div></div>'}).join('')}
+function bsAllies(x,P){if(!BSLN(x))return '';return BSLO().filter(m=>m.id!=x.id).map(m=>{const k=LK(m);return '<div class="c f art i-'+k+' '+eC(k)+'" style="'+P(bsPos(x,m))+(m.out?';opacity:.3;filter:grayscale(1)':'')+(G.turn==m.id?';box-shadow:0 0 0 .45cqw #ffd54f':'')+'" data-k="'+k+'" data-lid="'+m.id+'"><i class="bd a">'+LA(m)+'</i><i class="bd h">'+Math.max(0,m.hp)+'</i>'+bsMini(m)+'<div class=nm>'+(T4N[m.id]||'')+' · '+T[k].n+'</div></div>'}).join('')}
 
 /* ===== BOSS SELECT + PERK ===== */
 const BOSSES=[{id:'b0',n:'อัศวินโต๊ะกลม แลนเซล็อต',ic:'⚔️',hp:60,lan:1,d:'บอสตัวแรก · HP 60 · เล่นการ์ดเอง (กอง 25 ใบ) ใช้สกิล KNIGHT SPIRIT / แปลงร่าง / LIGHT SWORD JUDGEMENT EVIL · กองหมดแล้วเอาการ์ดดรอปโซนทั้งหมดกลับเข้ากอง'}];

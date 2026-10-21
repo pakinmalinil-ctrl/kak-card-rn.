@@ -1525,7 +1525,7 @@ const tn=tg=='L'?'ลีดเดอร์ '+nm(d):(tg&&T[tg.k]?T[tg.k].n:'?');
 if(!G.atl){G.atl=[];G.atn=0}
 G.atn++;G.atl.unshift({n:G.atn,b:ai==G.bs?1:0,w:nm(a),a:atts.map(un).join(' + '),t:tn});
 if(G.atl.length>12)G.atl.pop();try{atlRender()}catch(e){}}
-function atlRender(){let el=document.getElementById('atl');
+function atlRender(){let el=document.getElementById('atl');if(el)el.style.display='none';return;
 const app=document.getElementById('app'),on=!!(G&&G.boss&&G.p&&app&&app.style.display!='none');
 if(!on){if(el)el.style.display='none';return}
 if(!el){const st=document.createElement('style');st.textContent='#atl{position:fixed;right:4px;top:calc(env(safe-area-inset-top,0px) + 46px);width:200px;max-width:55vw;z-index:30;background:#0d1a11ee;border:1px solid var(--ln);border-radius:8px;font-size:10px;line-height:1.35;color:var(--tx)}#atl .h2{padding:4px 7px;font-weight:700;cursor:pointer;display:flex;justify-content:space-between}#atl .bd2{max-height:150px;overflow:auto;padding:0 7px 5px}#atl .r{padding:2px 0;border-top:1px solid #ffffff22}#atl .r.b{color:#ff9a9a}#atl .r.f{color:#fff}#atl .r:first-child{border-top:0}';document.head.appendChild(st);
@@ -2059,7 +2059,7 @@ const k=r&&r[0];to=al.find(x=>LK(x)==k)||al[0]}
 if(!G||G.over)return;const n=p.hand.length;to.cost=Math.min(10,to.cost+p.cost);to.mana=Math.min(10,to.mana+p.mana);to.hand.push(...p.hand);p.hand=[];p.cost=0;p.mana=0;
 L('โอนคอสต์ มานา และการ์ดบนมือ '+n+' ใบ จาก '+nm(p)+' ให้ '+nm(to));try{render()}catch(e){}
 if(G.turn==p.id&&!G.over&&!G.ending)setTimeout(()=>{if(G&&!G.over&&G.turn==p.id&&!G.ending)endTurn()},50)}
-function bsStat(x){if(x.id==G.bs)return '<div class=st2>👹 BOSS · HP '+Math.max(0,x.hp)+' · มือ '+x.hand.length+' · คอสต์ '+x.cost+' · มานา '+x.mana+' · กอง '+x.deck.length+(G.turn==G.bs?' · ◀ เทิร์นบอส':'')+'</div>'+(x.hand.length?'<div class=st2 style="display:flex;gap:3px;overflow-x:auto;padding:1px 0">'+x.hand.map(k=>'<div class="th art i-'+k+' '+eC(k)+'" data-k="'+k+'" style="width:30px;aspect-ratio:auto;height:42px;margin:0;flex:none;border-width:1px"></div>').join('')+'</div>':'');
+function bsStat(x){if(x.id==G.bs)return '<div class=st2>👹 BOSS · HP '+Math.max(0,x.hp)+' · มือ '+x.hand.length+' · คอสต์ '+x.cost+' · มานา '+x.mana+' · กอง '+x.deck.length+(G.turn==G.bs?' · ◀ เทิร์นบอส':'')+'</div>';
 const ps=G.p.filter(m=>m.id!=G.bs);
 const ld=ps.map(m=>{const k=LK(m);return '<div style="flex:none;width:58px;text-align:center"><div class="c f art i-'+k+' '+eC(k)+'" style="flex:none;width:100%;height:72px;'+(m.out?'opacity:.3;filter:grayscale(1);':'')+(G.turn==m.id?'box-shadow:0 0 0 3px #ffd54f;':'')+'" data-k="'+k+'"><i class="bd a" style="bottom:2px">'+LA(m)+'</i><i class="bd h" style="bottom:2px">'+Math.max(0,m.hp)+'</i></div><div style="font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(m.id==ME?'คุณ':(T4N[m.id]||''))+'</div></div>'}).join('');
 const ln=ps.map(m=>'<div class=st2>'+(m.id==ME?'คุณ':(T4N[m.id]||nm(m)))+' · มือ '+m.hand.length+' · คอสต์ '+m.cost+' · มานา '+m.mana+' · กอง '+m.deck.length+(m.lant?' · 👻'+m.soul:'')+(m.cube?' · ❤'+m.ch+'·💥'+m.cd:'')+(m.out?' · 💀 ออกจากเกม':'')+(G.turn==m.id?' ◀ เทิร์น':'')+'</div>').join('');

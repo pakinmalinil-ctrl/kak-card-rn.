@@ -5966,4 +5966,82 @@ function inj(){const mb=document.querySelector('#menu .mb');if(mb&&!document.get
 if(typeof menuR=='function'){const _m=menuR;window.menuR=function(){const r=_m.apply(this,arguments);try{inj()}catch(e){}return r}}
 try{inj()}catch(e){}
 })();
+/* ===== KRN SAVE SYSTEM: สำรอง / กู้คืนข้อมูล (ไฟล์ · รหัส · สล็อตในเครื่อง · ออโต้เซฟ) ===== */
+(()=>{
+const PFX='krn_',SLOTK='krn_slots',AUTOK='krn_auto',UNDOK='krn_undo',APP='KAKCARDRN',VER=1,NSLOT=3,CODEP='KRNSAVE1-';
+const own=k=>k===SLOTK||k===AUTOK||k===UNDOK;
+const L=(()=>{try{return window.localStorage}catch(e){return null}})();
+const _set=Storage.prototype.setItem,_rem=Storage.prototype.removeItem;
+let restoring=false;
+/* ระหว่างกู้คืน: กันไม่ให้เกมเขียนข้อมูลเก่าในหน่วยความจำทับข้อมูลที่เพิ่งกู้ */
+Storage.prototype.setItem=function(k,v){if(restoring&&String(k).indexOf(PFX)==0&&!own(String(k)))return;return _set.apply(this,arguments)};
+Storage.prototype.removeItem=function(k){if(restoring&&String(k).indexOf(PFX)==0&&!own(String(k)))return;return _rem.apply(this,arguments)};
+const rawSet=(k,v)=>_set.call(L,k,v),rawDel=k=>_rem.call(L,k);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const collect=()=>{const o={};if(!L)return o;for(let i=0;i<L.length;i++){const k=L.key(i);if(k&&k.indexOf(PFX)==0&&!own(k))o[k]=L.getItem(k)}return o};
+const snap=()=>({app:APP,v:VER,t:Date.now(),d:collect()});
+const sum=s=>{try{const d=s.d,ks=Object.keys(d);let n=0;ks.forEach(k=>n+=String(d[k]).length);let pt=null,cards=null;try{const r=JSON.parse(d.krn_r);pt=r.pt;cards=Object.keys(r.col||{}).length}catch(e){}
+return ks.length+' รายการ · '+(n/1024).toFixed(1)+' KB'+(pt!=null?' · 💰'+pt+' พ้อย':'')+(cards?' · การ์ด '+cards+' แบบ':'')}catch(e){return '-'}};
+const when=t=>{try{return new Date(t).toLocaleString('th-TH',{dateStyle:'short',timeStyle:'short'})}catch(e){return String(t)}};
+const getSlots=()=>{try{const a=JSON.parse(L.getItem(SLOTK)||'[]');return Array.isArray(a)?a:[]}catch(e){return[]}};
+const putSlots=a=>{try{rawSet(SLOTK,JSON.stringify(a));return true}catch(e){return false}};
+const getJ=k=>{try{return JSON.parse(L.getItem(k)||'null')}catch(e){return null}};
+const toCode=s=>CODEP+btoa(unescape(encodeURIComponent(JSON.stringify(s))));
+function parse(txt){txt=String(txt||'').trim();if(!txt)throw new Error('ไม่มีข้อมูล');
+ if(txt.indexOf(CODEP)==0)txt=decodeURIComponent(escape(atob(txt.slice(CODEP.length).replace(/\s+/g,''))));
+ const o=JSON.parse(txt);if(!o||o.app!==APP||!o.d||typeof o.d!=='object')throw new Error('ไม่ใช่ไฟล์ save ของเกมนี้');
+ const d={};for(const k in o.d){if(k.indexOf(PFX)!=0||own(k))continue;if(typeof o.d[k]!=='string')continue;d[k]=o.d[k]}
+ if(!Object.keys(d).length)throw new Error('ไม่พบข้อมูลเกมในไฟล์');
+ return{app:APP,v:o.v||1,t:o.t||Date.now(),d}}
+function restore(s,label){if(!L)return;
+ try{rawSet(UNDOK,JSON.stringify(snap()))}catch(e){}
+ restoring=true;
+ try{const cur=collect();for(const k in cur)rawDel(k);for(const k in s.d)rawSet(k,s.d[k])}catch(e){restoring=false;alert('กู้คืนไม่สำเร็จ: '+e.message);return}
+ msg('✅ กู้คืนสำเร็จ'+(label?' ('+label+')':'')+' · กำลังรีโหลดเกม…');setTimeout(()=>location.reload(),600)}
+/* ---------- ออโต้เซฟ ---------- */
+let lastA='';
+function autoSnap(){try{if(!L||restoring)return;const s=snap(),j=JSON.stringify(s.d);if(j===lastA||j==='{}')return;lastA=j;rawSet(AUTOK,JSON.stringify(s))}catch(e){}}
+try{const a=getJ(AUTOK);if(a&&a.d)lastA=JSON.stringify(a.d)}catch(e){}
+setInterval(autoSnap,90000);document.addEventListener('visibilitychange',()=>{if(document.hidden)autoSnap()});window.addEventListener('pagehide',autoSnap);setTimeout(autoSnap,4000);
+/* ---------- UI ---------- */
+let ovl=null,pend=null;
+const ov=()=>{if(!ovl){ovl=document.createElement('div');ovl.id='krnsv';ovl.style.cssText='position:fixed;inset:0;z-index:10050;background:#000e;overflow-y:auto;-webkit-overflow-scrolling:touch;display:none;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)';document.body.appendChild(ovl)}return ovl};
+function msg(t,bad){const m=document.getElementById('krnsvm');if(m){m.style.color=bad?'#ff8a80':'var(--gn)';m.textContent=t}}
+const btn=(a,t,c)=>'<button '+(c?'class="'+c+'" ':'')+'onclick="krnSv(\''+a+'\')">'+t+'</button>';
+function draw(){const o=ov(),sl=getSlots(),au=getJ(AUTOK),un=getJ(UNDOK);let h='<div class=w><div class=bar><button class=s onclick="krnSv(\'close\')">✕ ปิด</button><h2 style="margin:0">💾 Save / กู้คืนข้อมูล</h2></div>';
+ h+='<div id=krnsvm style="min-height:18px;font-size:12px;line-height:1.5;margin:4px 0"></div>';
+ if(!L)h+='<div style="color:#ff8a80;font-size:12px;margin:6px 0">⚠️ เบราว์เซอร์นี้ไม่อนุญาตให้เก็บข้อมูล (localStorage) ใช้ได้เฉพาะ Export/Import</div>';
+ h+='<div class=inf style="display:block;margin:6px 0"><h3>📤 สำรองข้อมูลออกมา</h3><div style="font-size:11px;opacity:.85">ข้อมูลปัจจุบัน: '+esc(sum(snap()))+'</div><div class=bar>'+btn('exp','⬇️ ดาวน์โหลดไฟล์ .json')+btn('code','📋 สร้างรหัสสำรอง','s')+'</div><textarea id=krnsvc rows=3 readonly style="display:none;width:100%;box-sizing:border-box;font-size:11px" onclick="this.select()"></textarea></div>';
+ h+='<div class=inf style="display:block;margin:6px 0"><h3>📥 กู้คืนจากไฟล์ / รหัส</h3><div class=bar><input type=file id=krnsvf accept=".json,.txt,application/json,text/plain" onchange="krnSv(\'file\')" style="max-width:100%"></div><textarea id=krnsvi rows=3 placeholder="หรือวางรหัสสำรอง (KRNSAVE1-…) / เนื้อหาไฟล์ที่นี่" style="width:100%;box-sizing:border-box;font-size:11px"></textarea><div class=bar>'+btn('paste','🔍 ตรวจรหัสที่วาง')+'</div><div id=krnsvp></div></div>';
+ h+='<div class=inf style="display:block;margin:6px 0"><h3>🗂 สล็อตในเครื่อง</h3>';
+ for(let i=0;i<NSLOT;i++){const s=sl[i];h+='<div class=mid style="align-items:flex-start"><div style="min-width:0;font-size:12px"><b>สล็อต '+(i+1)+'</b><br>'+(s&&s.d?'<span style="opacity:.85">'+esc(when(s.t))+'<br>'+esc(sum(s))+'</span>':'<span style="opacity:.6">ว่าง</span>')+'</div><div class=bar style="margin:0">'+btn('sv'+i,'💾 บันทึก')+(s&&s.d?btn('ld'+i,'📂 โหลด','s')+btn('dl'+i,'🗑','dg'):'')+'</div></div>'}
+ h+='</div>';
+ h+='<div class=inf style="display:block;margin:6px 0"><h3>🛟 สำรองอัตโนมัติ</h3><div class=mid style="align-items:flex-start"><div style="font-size:12px">'+(au&&au.d?'ออโต้เซฟล่าสุด<br><span style="opacity:.85">'+esc(when(au.t))+'<br>'+esc(sum(au))+'</span>':'<span style="opacity:.6">ยังไม่มี (ระบบเซฟให้ทุก 90 วิ และตอนปิดหน้า)</span>')+'</div>'+(au&&au.d?'<div class=bar style="margin:0">'+btn('lauto','📂 โหลด','s')+'</div>':'')+'</div>'
+ +(un&&un.d?'<div class=mid style="align-items:flex-start"><div style="font-size:12px">↩ ก่อนการกู้คืนครั้งล่าสุด<br><span style="opacity:.85">'+esc(when(un.t))+'<br>'+esc(sum(un))+'</span></div><div class=bar style="margin:0">'+btn('lundo','↩ ย้อนกลับ','s')+'</div></div>':'')+'</div>';
+ h+='<div style="font-size:11px;opacity:.7;line-height:1.5;margin:8px 0 24px">ข้อมูลที่สำรอง: พ้อย การ์ดที่สะสม เด็ค มิชชัน/Pass/Mastery รหัสที่ใช้แล้ว และการตั้งค่า · การกู้คืนจะ <b>แทนที่</b>ข้อมูลปัจจุบันทั้งหมด (ระบบเก็บ "ย้อนกลับ" ไว้ให้ 1 ครั้งอัตโนมัติ) · ควรดาวน์โหลดไฟล์เก็บไว้นอกเบราว์เซอร์เป็นระยะ เพราะการล้างข้อมูลเบราว์เซอร์จะลบสล็อตในเครื่องด้วย</div></div>';
+ o.innerHTML=h;o.style.display='block'}
+function preview(s,label){pend={s,label};const p=document.getElementById('krnsvp');if(!p)return;
+ p.innerHTML='<div style="background:#16231a;border:1px solid var(--gd);border-radius:8px;padding:8px;margin:6px 0;font-size:12px;line-height:1.5">พบข้อมูลบันทึกเมื่อ <b>'+esc(when(s.t))+'</b><br>'+esc(sum(s))+'<br><span style="color:#ffb74d">⚠️ จะแทนที่ข้อมูลปัจจุบันทั้งหมด</span><div class=bar>'+btn('go','✅ ยืนยันกู้คืน')+btn('no','ยกเลิก','s')+'</div></div>'}
+function dl(){try{const s=snap(),d=new Date(),z=n=>String(n).padStart(2,'0'),name='KAKCARD_save_'+d.getFullYear()+z(d.getMonth()+1)+z(d.getDate())+'_'+z(d.getHours())+z(d.getMinutes())+'.json';
+ const b=new Blob([JSON.stringify(s)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{try{URL.revokeObjectURL(a.href);a.remove()}catch(e){}},1500);msg('⬇️ สร้างไฟล์ '+name+' แล้ว · ถ้าไม่มีไฟล์ดาวน์โหลด ให้ใช้ "สร้างรหัสสำรอง" แทน')}catch(e){msg('ดาวน์โหลดไม่สำเร็จ: '+e.message+' · ลองใช้รหัสสำรองแทน',1)}}
+window.krnSv=a=>{try{
+ if(a=='close'){ov().style.display='none';return}
+ if(a=='exp'){dl();return}
+ if(a=='code'){const t=document.getElementById('krnsvc');t.value=toCode(snap());t.style.display='block';t.select();try{if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t.value).then(()=>msg('📋 คัดลอกรหัสแล้ว · เก็บไว้ในโน้ต/แชทตัวเองได้'),()=>msg('แตะที่ช่องรหัสแล้วคัดลอกเอง'));else msg('แตะที่ช่องรหัสแล้วคัดลอกเอง')}catch(e){msg('แตะที่ช่องรหัสแล้วคัดลอกเอง')}return}
+ if(a=='file'){const f=document.getElementById('krnsvf').files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{preview(parse(r.result),f.name)}catch(e){msg('❌ '+e.message,1)}};r.onerror=()=>msg('❌ อ่านไฟล์ไม่ได้',1);r.readAsText(f);return}
+ if(a=='paste'){try{preview(parse(document.getElementById('krnsvi').value),'รหัส')}catch(e){msg('❌ รหัส/ข้อมูลไม่ถูกต้อง: '+e.message,1)}return}
+ if(a=='go'){if(pend)restore(pend.s,pend.label);return}
+ if(a=='no'){pend=null;const p=document.getElementById('krnsvp');if(p)p.innerHTML='';return}
+ if(a=='lauto'){const s=getJ(AUTOK);if(s&&s.d)preview(s,'ออโต้เซฟ');return}
+ if(a=='lundo'){const s=getJ(UNDOK);if(s&&s.d)preview(s,'ย้อนกลับ');return}
+ let m;
+ if(m=/^sv(\d)$/.exec(a)){const i=+m[1],sl=getSlots();if(sl[i]&&sl[i].d&&!confirm('บันทึกทับสล็อต '+(i+1)+' ?'))return;sl[i]=snap();if(putSlots(sl)){draw();msg('💾 บันทึกลงสล็อต '+(i+1)+' แล้ว')}else{msg('❌ พื้นที่เก็บข้อมูลเต็ม บันทึกไม่ได้ · ลองลบสล็อตเก่า หรือดาวน์โหลดเป็นไฟล์แทน',1)}return}
+ if(m=/^ld(\d)$/.exec(a)){const s=getSlots()[+m[1]];if(s&&s.d)preview(s,'สล็อต '+(+m[1]+1));return}
+ if(m=/^dl(\d)$/.exec(a)){const i=+m[1],sl=getSlots();if(!confirm('ลบสล็อต '+(i+1)+' ?'))return;sl[i]=null;putSlots(sl);draw();return}
+}catch(e){msg('เกิดข้อผิดพลาด: '+e.message,1)}};
+window.krnSvOpen=()=>{pend=null;draw()};
+function inj(){const mb=document.querySelector('#menu .mb');if(mb&&!document.getElementById('svbtn'))mb.insertAdjacentHTML('beforeend','<button id="svbtn" onclick="krnSvOpen()" style="background:#2e7d32;color:#fff">💾 Save / กู้คืน</button>')}
+if(typeof menuR=='function'){const _m=menuR;window.menuR=function(){const r=_m.apply(this,arguments);try{inj()}catch(e){}return r}}
+try{inj()}catch(e){}
+})();
 </script></body></html>
